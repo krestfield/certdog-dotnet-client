@@ -17,8 +17,6 @@ More info on this client: https://krestfield.github.io/docs/certdog/dotnet_clien
 
 All the documentaion: https://krestfield.github.io/docs/certdog/certdog.html
 
-Our blog: https://certdog.io/
-
 
 
 Remember, certdog can interface to your own Microsoft CAs as well as Primekey EJBCA. Your code will be the same whether its Microsoft, an Internal CA or a PrimeKey EJBCA
@@ -41,7 +39,7 @@ String p12Base64Data = Certdog.GetCert("https://certdog.net/certdog/api", "Certd
 // Converting to binary and saving means you can import or use wherever you want
 byte[] p12BinaryData = Convert.FromBase64String(p12Base64Data);
 using (BinaryWriter binWriter = new BinaryWriter(File.Open(pfxFilename, FileMode.Create)))
-                    binWriter.Write(p12BinaryData);
+	binWriter.Write(p12BinaryData);
 ```
 
 And that's it!  
