@@ -11,11 +11,11 @@ Usage
 
 
 
-More info on certog: https://krestfield.com/certdog
+More info on certdog: https://krestfield.com/certdog
 
 More info on this client: https://krestfield.github.io/docs/certdog/dotnet_client.html
 
-All the documentaion: https://krestfield.github.io/docs/certdog/certdog.html
+All the documentation: https://krestfield.github.io/docs/certdog/certdog.html
 
 
 
