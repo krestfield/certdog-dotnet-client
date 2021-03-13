@@ -30,11 +30,16 @@ Remember, certdog can interface to your own Microsoft CAs as well as Primekey EJ
 using certdognet;
 ...
 ...    
-
+// If you want to add Subject Alternative Names, do it like this
+// Otherwise you can pass null (or an empty List)    
+List<String> sans = new List<String>();
+sans.Add("DNS:mydomain.com");
+sans.Add("IP:10.0.0.1");
+sans.Add("EMAIL:user@mydomain.com");
     
 // This will return your certificate as a base64 encoded PKCS#12
 String p12Base64Data = Certdog.GetCert("https://certdog.net/certdog/api", "Certdog TLS", "CN=mydomain.com", 
-		"RSA2048", "somecomplexpassword", "certdogtest", "password");
+		"RSA2048", "somecomplexpassword", sans, "certdogtest", "password");
 
 // Converting to binary and saving means you can import or use wherever you want
 byte[] p12BinaryData = Convert.FromBase64String(p12Base64Data);
@@ -47,9 +52,9 @@ And that's it!
 Some other methods:
 
 * GetCertFromCsr
-  * Accepts pre-generated CSR data
+  * Accepts a pre-generated CSR data and returns a certificate
 * GetCertIssuers
-  * Returns a list of the available issuers
+  * Returns a list of the available issuers - including their certificates
 * GetCsrGenerators
   * Returns a list of the available CSR generators
 
