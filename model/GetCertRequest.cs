@@ -15,5 +15,6 @@ namespace certdognet.model
         public String p12Password { get; set; }
         public String extraInfo { get; set; }
         public String extraEmails { get; set; }
+        public String teamName { get; set; }
     }
 }

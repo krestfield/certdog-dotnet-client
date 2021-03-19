@@ -10,5 +10,7 @@ namespace certdognet.model
     {
         public String caName { get; set; }
         public String csr { get; set; }
+
+        public String teamName { get; set; }
     }
 }

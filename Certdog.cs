@@ -23,10 +23,12 @@ namespace certdognet
         /// <param name="generator">The name of the CSR Generator</param>
         /// <param name="p12Password">The password to protect the returned PKCS#12</param>
         /// <param name="sans">Subject Alternative Names. E.g. ["DNS:domain.com","IP:10.11.1.2"]</param>
+        /// <param name="teamName">The name of the team to associate this certificate with</param>
         /// <param name="username">The certdog API Username</param>
         /// <param name="password">The certdog API Password</param>
         /// <returns>Base64 encoded PKCS#12</returns>
-        public static String GetCert(String url, String certIssuer, String dn, String generator, String p12Password, List<String> sans, String username, String password)
+        public static String GetCert(String url, String certIssuer, String dn, String generator, 
+            String p12Password, List<String> sans, String teamName, String username, String password)
         {
             RestClient client = GetClient(url);
             String jwt = Login(client, username, password);
@@ -36,7 +38,9 @@ namespace certdognet
 
             var request = new RestRequest("/certs/request", Method.POST);
             request.AddHeader("Authorization", "Bearer " + jwt);
-            request.AddJsonBody(new GetCertRequest { caName = certIssuer, dn = dn, csrGeneratorName = generator, subjectAltNames = sans.ToArray(),p12Password = p12Password });
+            request.AddJsonBody(
+                new GetCertRequest { caName = certIssuer, dn = dn, csrGeneratorName = generator,
+                    subjectAltNames = sans.ToArray(), p12Password = p12Password, teamName = teamName });
 
             IRestResponse<GetCertResponse> response = client.Execute<GetCertResponse>(request);
             CheckError(response, "Get Certificate");
@@ -58,15 +62,17 @@ namespace certdognet
         /// <param name="generator">The name of the CSR Generator</param>
         /// <param name="p12Password">The password to protect the returned PKCS#12</param>
         /// <param name="sans">Subject Alternative Names. E.g. ["DNS:domain.com","IP:10.11.1.2"]</param>
+        /// <param name="teamName">The name of the team to associate this certificate with</param>
         /// <returns>Base64 encoded PKCS#12</returns>
-        public static String GetCert(String url, String certIssuer, String dn, String generator, String p12Password, List<String> sans)
+        public static String GetCert(String url, String certIssuer, String dn, String generator, 
+            String p12Password, List<String> sans, String teamName)
         {
             var credManager = new Credential { Target = CERTDOGCREDS };
             credManager.Load();
             if (credManager == null || credManager.Username == null || credManager.Password == null)
                 throw new Exception("Unable to obtain credentials from the credential store. Ensure that a Generic credential has been saved called " + CERTDOGCREDS + " set by the same user running this application");
 
-            return GetCert(url, certIssuer, dn, generator, p12Password, sans, credManager.Username, credManager.Password);
+            return GetCert(url, certIssuer, dn, generator, p12Password, sans, teamName, credManager.Username, credManager.Password);
         }
 
         /// <summary>
@@ -76,17 +82,18 @@ namespace certdognet
         /// <param name="url">The certdog API URL</param>
         /// <param name="certIssuer">The name of the certificate issuer</param>
         /// <param name="csrData">The csr data in PEM format</param>
+        /// <param name="teamName">The name of the team to associate this certificate with</param>
         /// <param name="username">The certdog API Username</param>
         /// <param name="password">The certdog API Password</param>
         /// <returns>The issued certificate in PEM format</returns>
-        public static String GetCertFromCsr(String url, String certIssuer, String csrData, String username, String password)
+        public static String GetCertFromCsr(String url, String certIssuer, String csrData, String teamName, String username, String password)
         {
             RestClient client = GetClient(url);
             String jwt = Login(client, username, password);
 
             var request = new RestRequest("/certs/requestp10", Method.POST);
             request.AddHeader("Authorization", "Bearer " + jwt);
-            request.AddJsonBody(new GetCertFromCsrRequest { caName = certIssuer, csr = csrData });
+            request.AddJsonBody(new GetCertFromCsrRequest { caName = certIssuer, csr = csrData, teamName = teamName });
 
             IRestResponse<GetCertFromCsrResponse> response = client.Execute<GetCertFromCsrResponse>(request);
             CheckError(response, "Get Certificate");
@@ -104,15 +111,16 @@ namespace certdognet
         /// <param name="url">The certdog API URL</param>
         /// <param name="certIssuer">The name of the certificate issuer</param>
         /// <param name="csrData">The csr data in PEM format</param>
+        /// <param name="teamName">The name of the team to associate this certificate with</param>
         /// <returns>The issued certificate in PEM format</returns>
-        public static String GetCertFromCsr(String url, String certIssuer, String csrData)
+        public static String GetCertFromCsr(String url, String certIssuer, String csrData, String teamName)
         {
             var credManager = new Credential { Target = CERTDOGCREDS };
             credManager.Load();
             if (credManager == null || credManager.Username == null || credManager.Password == null)
                 throw new Exception("Unable to obtain credentials from the credential store. Ensure that a Generic credential has been saved called " + CERTDOGCREDS + " set by the same user running this application");
 
-            return GetCertFromCsr(url, certIssuer, csrData, credManager.Username, credManager.Password);
+            return GetCertFromCsr(url, certIssuer, csrData, teamName, credManager.Username, credManager.Password);
         }
 
         /// <summary>
