@@ -39,7 +39,7 @@ sans.Add("EMAIL:user@mydomain.com");
     
 // This will return your certificate as a base64 encoded PKCS#12
 String p12Base64Data = Certdog.GetCert("https://certdog.net/certdog/api", "Certdog TLS", "CN=mydomain.com", 
-		"RSA2048", "somecomplexpassword", sans, "certdogtest", "password");
+		"RSA2048 Generator", "somecomplexpassword", sans, "certdogtest", "password");
 
 // Converting to binary and saving means you can import or use wherever you want
 byte[] p12BinaryData = Convert.FromBase64String(p12Base64Data);
