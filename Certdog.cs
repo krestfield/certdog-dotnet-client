@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using RestSharp;
 using certdognet.model;
 using CredentialManagement;
@@ -228,7 +227,7 @@ namespace certdognet
                     ErrorResponse err = SimpleJson.DeserializeObject<ErrorResponse>(response.Content);
                     errorMessage += err.status + ". Details: " + err.message;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     errorMessage += response.StatusCode + (response.Content != null ? ". Details: " + response.Content : "");
                 }
