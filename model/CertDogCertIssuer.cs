@@ -10,9 +10,10 @@ namespace certdognet.model
     {
         public String id { get; set; }
         public String caName { get; set; }
-        public String caType { get; set; }
+        public int caType { get; set; }
         public String caTypeName { get; set; }
         public String[] caCerts { get; set; }
         public String caSubjectDn { get; set; }
+        public String dnRestrictionId { get; set; }
     }
 }

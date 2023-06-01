@@ -4,6 +4,7 @@ using RestSharp;
 using certdognet.model;
 using CredentialManagement;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace certdognet
 {
@@ -35,13 +36,15 @@ namespace certdognet
             if (sans == null)
                 sans = new List<String>();
 
-            var request = new RestRequest("/certs/request", Method.POST);
+            var request = new RestRequest("/certs/request", Method.Post);
             request.AddHeader("Authorization", "Bearer " + jwt);
+            request.AddHeader("Content-Type", "application/json");
+
             request.AddJsonBody(
                 new GetCertRequest { caName = certIssuer, dn = dn, csrGeneratorName = generator,
                     subjectAltNames = sans.ToArray(), p12Password = p12Password, teamName = teamName });
 
-            IRestResponse<GetCertResponse> response = client.Execute<GetCertResponse>(request);
+            var response = client.Execute<GetCertResponse>(request);
             CheckError(response, "Get Certificate");
 
             String p12Data = response.Data.p12Data;
@@ -90,11 +93,11 @@ namespace certdognet
             RestClient client = GetClient(url);
             String jwt = Login(client, username, password);
 
-            var request = new RestRequest("/certs/requestp10", Method.POST);
+            var request = new RestRequest("/certs/requestp10", Method.Post);
             request.AddHeader("Authorization", "Bearer " + jwt);
-            request.AddJsonBody(new GetCertFromCsrRequest { caName = certIssuer, csr = csrData, teamName = teamName });
+            request.AddJsonBody(new GetCertRequest { caName = certIssuer, csr = csrData, teamName = teamName });
 
-            IRestResponse<GetCertFromCsrResponse> response = client.Execute<GetCertFromCsrResponse>(request);
+            var response = client.Execute<GetCertResponse>(request);
             CheckError(response, "Get Certificate");
 
             String certData = response.Data.pemCert;
@@ -134,15 +137,14 @@ namespace certdognet
             RestClient client = GetClient(url);
             String jwt = Login(client, username, password);
 
-            var request = new RestRequest("/admin/ca", Method.GET);
-            request.AddHeader("Content-Type", "application/json");
+            var request = new RestRequest("/admin/ca", Method.Get);
             request.AddHeader("Authorization", "Bearer " + jwt);
 
-            IRestResponse response = client.Execute(request);
-
-            var issuers = SimpleJson.DeserializeObject<List<CertDogCertIssuer>>(response.Content);
+            var response = client.Execute(request);
 
             CheckError(response, "Getting Issuers");
+
+            var issuers = JsonSerializer.Deserialize<List<CertDogCertIssuer>>(response.Content);
 
             Logout(client, jwt);
 
@@ -176,13 +178,12 @@ namespace certdognet
             RestClient client = GetClient(url);
             String jwt = Login(client, username, password);
 
-            var request = new RestRequest("/admin/generators", Method.GET);
-            request.AddHeader("Content-Type", "application/json");
+            var request = new RestRequest("/admin/generators", Method.Get);
             request.AddHeader("Authorization", "Bearer " + jwt);
 
-            IRestResponse response = client.Execute(request);
+            var response = client.Execute(request);
 
-            var generators = SimpleJson.DeserializeObject<List<CertDogCsrGenerator>>(response.Content);
+            var generators = JsonSerializer.Deserialize<List<CertDogCsrGenerator>>(response.Content);
 
             CheckError(response, "Getting CSR Generators");
 
@@ -214,7 +215,7 @@ namespace certdognet
         /// </summary>
         /// <param name="response"></param>
         /// <param name="requestName"></param>
-        private static void CheckError(IRestResponse response, String requestName)
+        private static void CheckError(RestResponse response, String requestName)
         {
             if (response == null)
                 throw new Exception(requestName + " failed. No response was returned from the server");
@@ -224,7 +225,7 @@ namespace certdognet
                 String errorMessage = requestName + " failed with error code ";
                 try
                 {
-                    ErrorResponse err = SimpleJson.DeserializeObject<ErrorResponse>(response.Content);
+                    ErrorResponse err = JsonSerializer.Deserialize<ErrorResponse>(response.Content);
                     errorMessage += err.status + ". Details: " + err.message;
                 }
                 catch (Exception)
@@ -243,9 +244,10 @@ namespace certdognet
         /// <returns></returns>
         private static RestClient GetClient(String url)
         {
-            var client = new RestClient(url);
-            client.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-            client.Timeout = -1;
+
+            var options = new RestClientOptions(url);
+            options.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+            var client = new RestClient(options);
 
             return client;
         }
@@ -259,11 +261,11 @@ namespace certdognet
         /// <returns></returns>
         private static String Login(RestClient client, String username, String password)
         {
-            var request = new RestRequest("/login", Method.POST);
+            var request = new RestRequest("/login", Method.Post);
             request.AddHeader("Content-Type", "application/json");
             request.AddJsonBody(new LoginRequest { username = username, password = password });
 
-            IRestResponse<LoginResponse> response = client.Execute<LoginResponse>(request);
+            var response = client.Execute<LoginResponse>(request);
             CheckError(response, "Logging In");
 
 
@@ -279,7 +281,7 @@ namespace certdognet
         /// <param name="token"></param>
         private static void Logout(RestClient client, String token)
         {
-            var request = new RestRequest("/logouthere", Method.GET);
+            var request = new RestRequest("/logouthere", Method.Get);
             request.AddHeader("Content-Type", "application/json");
             request.AddHeader("Authorization", "Bearer " + token);
 
