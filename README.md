@@ -50,7 +50,7 @@ using (BinaryWriter binWriter = new BinaryWriter(File.Open(@"C:\temp\certdog.pfx
 File.WriteAllText(@"C:\temp\certdog.cer", resp.pemCert);
 ```
 
-And that's it!  
+Note: This is referencing the online certdog instance (at https://certdog.net). This is up between 08:00 and 22:00 UTC  
 
 Some other methods:
 
