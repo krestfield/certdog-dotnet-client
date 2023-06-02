@@ -5,8 +5,8 @@ An official signed version of the dll can be obtained from [here](https://krestf
 
 Usage
 
-1. Build the project
-2. From your application, create a reference to certdognet
+1. Build the project (or just download the dll)
+2. From your application, create a reference to certdognet.dll
 3. Write a few lines of code to obtain your certificates
 
 
@@ -36,15 +36,18 @@ List<String> sans = new List<String>();
 sans.Add("DNS:mydomain.com");
 sans.Add("IP:10.0.0.1");
 sans.Add("EMAIL:user@mydomain.com");
-    
-// This will return your certificate as a base64 encoded PKCS#12
-String p12Base64Data = Certdog.GetCert("https://certdog.net/certdog/api", "Certdog TLS", "CN=mydomain.com", 
-		"RSA2048 Generator", "somecomplexpassword", sans, "certdogtest", "password");
 
-// Converting to binary and saving means you can import or use wherever you want
-byte[] p12BinaryData = Convert.FromBase64String(p12Base64Data);
-using (BinaryWriter binWriter = new BinaryWriter(File.Open(pfxFilename, FileMode.Create)))
+// This will return the issued certificate data
+GetCertResponse resp = Certdog.GetCert("https://certdog.net/certdog/api", "Certdog TLS", "CN=mydomain.com",
+    "RSA2048", "somecomplexpassword", sans, "Test Team", "certdogtest", "password");
+
+// Converting the P12 data binary and saving means you can import or use wherever you want
+byte[] p12BinaryData = Convert.FromBase64String(resp.p12Data);
+using (BinaryWriter binWriter = new BinaryWriter(File.Open(@"C:\temp\certdog.pfx", FileMode.Create)))
 	binWriter.Write(p12BinaryData);
+
+// Also save the PEM certificate
+File.WriteAllText(@"C:\temp\certdog.cer", resp.pemCert);
 ```
 
 And that's it!  
@@ -57,6 +60,10 @@ Some other methods:
   * Returns a list of the available issuers - including their certificates
 * GetCsrGenerators
   * Returns a list of the available CSR generators
+* RevokeCert
+  * Revokes a previously issued certificate
+* GetCertDetails
+  * Returns all the details associated with a stored certificate
 
 The certdog username and password can be omitted for all methods - if you have stored these details in the Windows Credential Store.  See [here](https://krestfield.github.io/docs/certdog/dotnet_client.html) for more details
 
