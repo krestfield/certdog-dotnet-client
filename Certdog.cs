@@ -11,6 +11,15 @@ namespace certdognet
     public class Certdog
     {
         public static String CERTDOGCREDS = "CERTDOGCREDS";
+        
+        public static String REVOKE_REASON_UNSPECIFIED = "unspecified";
+        public static String REVOKE_REASON_KEY_COMPROMISE = "key compromise";
+        public static String REVOKE_REASON_CA_COMPROMISE = "ca compromise";
+        public static String REVOKE_REASON_AFFILIATION_CHANGED = "affiliation changed";
+        public static String REVOKE_REASON_SUPERSEDED = "superseded";
+        public static String REVOKE_REASON_CESSATION_OF_OPERATION = "cessation of operation";
+        public static String REVOKE_REASON_CERTIFICATE_HOLD = "hold";
+
         #region Public Static Calls
 
         /// <summary>
@@ -27,7 +36,7 @@ namespace certdognet
         /// <param name="username">The certdog API Username</param>
         /// <param name="password">The certdog API Password</param>
         /// <returns>Base64 encoded PKCS#12</returns>
-        public static String GetCert(String url, String certIssuer, String dn, String generator, 
+        public static GetCertResponse GetCert(String url, String certIssuer, String dn, String generator, 
             String p12Password, List<String> sans, String teamName, String username, String password)
         {
             RestClient client = GetClient(url);
@@ -47,11 +56,9 @@ namespace certdognet
             var response = client.Execute<GetCertResponse>(request);
             CheckError(response, "Get Certificate");
 
-            String p12Data = response.Data.p12Data;
-
             Logout(client, jwt);
 
-            return p12Data;
+            return response.Data;
         }
 
         /// <summary>
@@ -66,7 +73,7 @@ namespace certdognet
         /// <param name="sans">Subject Alternative Names. E.g. ["DNS:domain.com","IP:10.11.1.2"]</param>
         /// <param name="teamName">The name of the team to associate this certificate with</param>
         /// <returns>Base64 encoded PKCS#12</returns>
-        public static String GetCert(String url, String certIssuer, String dn, String generator, 
+        public static GetCertResponse GetCert(String url, String certIssuer, String dn, String generator, 
             String p12Password, List<String> sans, String teamName)
         {
             var credManager = new Credential { Target = CERTDOGCREDS };
@@ -88,7 +95,7 @@ namespace certdognet
         /// <param name="username">The certdog API Username</param>
         /// <param name="password">The certdog API Password</param>
         /// <returns>The issued certificate in PEM format</returns>
-        public static String GetCertFromCsr(String url, String certIssuer, String csrData, String teamName, String username, String password)
+        public static GetCertResponse GetCertFromCsr(String url, String certIssuer, String csrData, String teamName, String username, String password)
         {
             RestClient client = GetClient(url);
             String jwt = Login(client, username, password);
@@ -100,11 +107,9 @@ namespace certdognet
             var response = client.Execute<GetCertResponse>(request);
             CheckError(response, "Get Certificate");
 
-            String certData = response.Data.pemCert;
-
             Logout(client, jwt);
 
-            return certData;
+            return response.Data;
         }
 
         /// <summary>
@@ -115,7 +120,7 @@ namespace certdognet
         /// <param name="csrData">The csr data in PEM format</param>
         /// <param name="teamName">The name of the team to associate this certificate with</param>
         /// <returns>The issued certificate in PEM format</returns>
-        public static String GetCertFromCsr(String url, String certIssuer, String csrData, String teamName)
+        public static GetCertResponse GetCertFromCsr(String url, String certIssuer, String csrData, String teamName)
         {
             var credManager = new Credential { Target = CERTDOGCREDS };
             credManager.Load();
@@ -123,6 +128,93 @@ namespace certdognet
                 throw new Exception("Unable to obtain credentials from the credential store. Ensure that a Generic credential has been saved called " + CERTDOGCREDS + " set by the same user running this application");
 
             return GetCertFromCsr(url, certIssuer, csrData, teamName, credManager.Username, credManager.Password);
+        }
+
+        /// <summary>
+        /// Revoke a certificate
+        /// Provide either the certIssuer name or the certIssuer ID (for certIssuer) together with the certificate's serialNumber OR
+        /// provide the certificate ID as returned from the GetCert calls
+        /// </summary>
+        /// <param name="url">The certdog API URL</param>
+        /// <param name="certIssuer">Either the certificate issuer name or its ID. If you provide this you must also provide the certificate serialNumber</param>
+        /// <param name="serialNumber">The certificate serial number to revoke. If this is provided certIssuer must also be provided</param>
+        /// <param name="certId">The ID of the certificate to revoke. certIssuer and serialNumber are not required when this is provided</param>
+        /// <param name="reason">The revocation reason, use the constants (e.g. Certdog.REVOKE_REASON_UNSPECIFIED)</param>
+        /// <exception cref="Exception"></exception>
+        public static void RevokeCert(String url, String certIssuer, String serialNumber, String certId, String reason)
+        {
+            var credManager = new Credential { Target = CERTDOGCREDS };
+            credManager.Load();
+            if (credManager == null || credManager.Username == null || credManager.Password == null)
+                throw new Exception("Unable to obtain credentials from the credential store. Ensure that a Generic credential has been saved called " + CERTDOGCREDS + " set by the same user running this application");
+
+            RevokeCert(url, certIssuer, serialNumber, certId, reason, credManager.Username, credManager.Password);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url">The certdog API URL</param>
+        /// <param name="certIssuer">Either the certificate issuer name or its ID. If you provide this you must also provide the certificate serialNumber</param>
+        /// <param name="serialNumber">The certificate serial number to revoke. If this is provided certIssuer must also be provided</param>
+        /// <param name="certId">The ID of the certificate to revoke. certIssuer and serialNumber are not required when this is provided</param>
+        /// <param name="reason">The revocation reason, use the constants (e.g. Certdog.REVOKE_REASON_UNSPECIFIED)</param>
+        /// <param name="username">The certdog API Username</param>
+        /// <param name="password">The certdog API Password</param>
+        public static void RevokeCert(String url, String certIssuer, String serialNumber, String certId, String reason, String username, String password)
+        {
+            RestClient client = GetClient(url);
+            String jwt = Login(client, username, password);
+
+            var request = new RestRequest("/certs/revoke", Method.Post);
+            request.AddHeader("Authorization", "Bearer " + jwt);
+            request.AddJsonBody(new RevokeCertRequest{ caName = certIssuer, serialNumber = serialNumber, certId = certId, reason = reason });
+
+            var response = client.Execute<GetCertResponse>(request);
+            CheckError(response, "Revoke Certificate");
+
+            Logout(client, jwt);
+        }
+
+        /// <summary>
+        /// Returns details of the stored certificate
+        /// </summary>
+        /// <param name="url">The certdog API URL</param>
+        /// <param name="certId">The ID of the certificate to get the details of</param>
+        /// <returns>CertDetails</returns>
+        /// <exception cref="Exception"></exception>
+        public static CertDetails GetCertDetails(String url, String certId)
+        {
+            var credManager = new Credential { Target = CERTDOGCREDS };
+            credManager.Load();
+            if (credManager == null || credManager.Username == null || credManager.Password == null)
+                throw new Exception("Unable to obtain credentials from the credential store. Ensure that a Generic credential has been saved called " + CERTDOGCREDS + " set by the same user running this application");
+
+            return GetCertDetails(url, certId, credManager.Username, credManager.Password);
+        }
+
+        /// <summary>
+        /// Returns details of the stored certificate
+        /// </summary>
+        /// <param name="url">The certdog API URL</param>
+        /// <param name="certId">The ID of the certificate to get the details of</param>
+        /// <param name="username">The certdog API Username</param>
+        /// <param name="password">The certdog API Password</param>
+        /// <returns></returns>
+        public static CertDetails GetCertDetails(String url, String certId, String username, String password)
+        {
+            RestClient client = GetClient(url);
+            String jwt = Login(client, username, password);
+
+            var request = new RestRequest("/certs/" + certId, Method.Get);
+            request.AddHeader("Authorization", "Bearer " + jwt);
+
+            var response = client.Execute<CertDetails>(request);
+            CheckError(response, "Get Certificate Details");
+
+            Logout(client, jwt);
+
+            return response.Data;
         }
 
         /// <summary>

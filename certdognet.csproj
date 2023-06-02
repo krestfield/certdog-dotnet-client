@@ -79,13 +79,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Certdog.cs" />
+    <Compile Include="model\CertDetails.cs" />
     <Compile Include="model\CertDogCertIssuer.cs" />
     <Compile Include="model\CertDogCsrGenerator.cs" />
+    <Compile Include="model\CertHistory.cs" />
     <Compile Include="model\ErrorResponse.cs" />
     <Compile Include="model\GetCertRequest.cs" />
     <Compile Include="model\GetCertResponse.cs" />
     <Compile Include="model\LoginRequest.cs" />
     <Compile Include="model\LoginResponse.cs" />
+    <Compile Include="model\RevokeCertRequest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
